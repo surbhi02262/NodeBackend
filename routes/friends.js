@@ -14,29 +14,20 @@ app.get('/friends',(req,res) =>{
 
 app.get('/user/friend', Auth.ensureToken, (req,res) =>{
     Friends.find()
-    .or({recieverId: req.data.data, status: 'Confirm'}).populate({path: 'recieverId', select: 'firstName lastName gender password email',})
-    .or({senderId: req.data.data, status: 'Confirm'}).populate({path: 'senderId',select: 'firstName lastName gender password email'})
+    .or({recieverId: req.data.data, status: 'Confirm'}).populate({path: 'recieverId', select: 'firstName lastName gender password email, Image',})
+    .or({senderId: req.data.data, status: 'Confirm'}).populate({path: 'senderId',select: 'firstName lastName gender password email, Image'})
     .then(resp => {
         // let requestSend = []
         // let reqRec=[]
-        // let friend = []
-        // resp.map(item => {
-        //     if(item.status === 'Pending') {
-        //         console.log(item.senderId._id == req.data.data, item.senderId._id, req.data.data)
-        //         if(item.senderId._id == req.data.data) {
-        //             requestSend.push(item.recieverId)
-        //         } else {
-        //             reqRec.push(item.senderId)
-        //         }
-        //     } else {
-        //         if(item.senderId._id == req.data.data) {
-        //             friend.push(item.recieverId)
-        //         } else {
-        //             friend.push(item.senderId)
-        //         }
-        //     }
-        // })
-        res.send({result: resp, success:true})
+        let friend = []
+        resp.map(item => {
+            if(item.senderId._id == req.data.data) {
+                friend.push(item.recieverId)
+            } else {
+                friend.push(item.senderId)
+            }
+        })
+        res.send({result: friend, success:true})
     }).catch(err => res.send(err))
 })
 
@@ -75,25 +66,13 @@ app.get('/user/requestreceived', Auth.ensureToken, (req,res) =>{
     //.or({senderId: req.data.data}).populate({path: 'senderId',select: 'firstName lastName Image gender password email'})
     .then(resp => {
         // let requestSend = []
-        // let reqRec=[]
+         let reqRec=[]
         // let friend = []
-        // resp.map(item => {
-        //     if(item.status === 'Pending') {
-        //         console.log(item.senderId._id == req.data.data, item.senderId._id, req.data.data)
-        //         if(item.senderId._id == req.data.data) {
-        //             requestSend.push(item.recieverId)
-        //         } else {
-        //             reqRec.push(item.senderId)
-        //         }
-        //     } else {
-        //         if(item.senderId._id == req.data.data) {
-        //             friend.push(item.recieverId)
-        //         } else {
-        //             friend.push(item.senderId)
-        //         }
-        //     }
-        // })
-        res.send({result:resp, success:true})
+        resp.map(item => {
+            reqRec.push(item.senderId)
+                
+        })
+        res.send({result:reqRec, success:true})
     }).catch(err => res.send(err))
 })
 
@@ -118,7 +97,6 @@ app.post('/friends/friend',Auth.ensureToken,(req,res) =>{
             res.send({status: "Request Already Sent"})
         }
     }).catch(err => res.send(err))
-    
 })
 
 app.delete('/friends',Auth.ensureToken,(req,res) =>{
@@ -128,33 +106,30 @@ app.delete('/friends',Auth.ensureToken,(req,res) =>{
     .catch(err => res.send(err))
 })
 
-app.get('/getstatus/:userId/:friendId',Auth.ensureToken,(req,res) =>{
-    Friends.findOne({ senderId: req.params.userId, recieverId: req.params.friendId })
+app.get('/getstatus/:friendId',Auth.ensureToken,(req,res) =>{
+    Friends.findOne({ senderId: req.data.data, recieverId: req.params.friendId })
         .then(resp => {
             console.log(JSON.stringify(resp))
             if(resp != null) {
                 if(resp.status !== "Confirm") {
-                    res.send({status: 'Request Sent', key:"Confirm" ,senderId: req.params.userId, recieverId: req.params.friendId})
+                    res.send({status: 'Request Sent', key:"Confirm" ,senderId: req.data.data, recieverId: req.params.friendId})
                 } else {
-                        res.send({status: 'Friends', key:"remove" ,senderId: req.params.userId, recieverId: req.params.friendId})
+                        res.send({status: 'Friends', key:"remove" ,senderId: req.data.data, recieverId: req.params.friendId})
                     }
             }else {
-                Friends.findOne({ senderId: req.params.friendId, recieverId: req.params.userId  }).
+                Friends.findOne({ senderId: req.params.friendId, recieverId: req.data.data  }).
                 then(rest => {
                     console.log("2")
                     if(rest != null) {
-                        if(resp.status === "Pending") {
-                            res.send({status:"Confirm Request", key:"Confirm",senderId: req.params.friendId, recieverId: req.params.userId})
+                        if(rest.status === "Pending") {
+                            res.send({status:"Confirm Request", key:"Confirm",senderId: req.params.friendId, recieverId: req.data.data})
                         }
                         else {
-                            res.send({status: 'Friends', key:"remove" ,senderId: req.params.userId, recieverId: req.params.friendId})
+                            res.send({status: 'Friends', key:"remove" ,senderId: req.data.data, recieverId: req.params.friendId})
                         }
-                    
-                        console.log("3")
-                        
                     } else {
                         console.log("4")
-                        res.send({status:'Add Friend', key:"Pending", senderId: req.params.userId, recieverId: req.params.friendId})
+                        res.send({status:'Add Friend', key:"Pending", senderId: req.data.data, recieverId: req.params.friendId})
                     }
                 })
             }
