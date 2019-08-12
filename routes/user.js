@@ -3,12 +3,33 @@ let app = express();
 
 let Auth = require('../auth/security');
 let User = require('../models/user');
+let multer = require('multer');
 
 
 app.use(express.json());
 
-
-
+const storage = multer.diskStorage({
+    destination : (req,file,cb) =>{
+        cb(null,'./uploads/')
+    },
+    filename:  (req,file,cb) =>{
+        cb(null, new Date().toISOString() + file.originalname);
+    }
+})
+const fileFilter = (req,file,cb) =>{
+    if(file.mimetype === 'image/jpeg'){
+        cb(null,true)
+    }else{
+        cb(new Error('format not supported'),false)
+    } 
+} 
+const upload = multer({
+    storage:storage,
+    limits:{
+        fileSize : 1024 * 1024 *3
+    },
+    fileFilter:fileFilter,
+});
 app.get('/users',(req,res) =>{
     // let verify =  Auth.verifyToken(req)
     // if(verify) {
@@ -107,8 +128,12 @@ app.put('/users/user',Auth.ensureToken,(req,res,next)=>{
 })
 
 
-app.put('/user/updateImage',Auth.ensureToken,(req,res,next)=>{
-    User.findOneAndUpdate({_id:req.data.data},req.body,{new:true},(err,result)=> {
+app.put('/user/updateImage',upload.single('Image'),Auth.ensureToken,(req,res,next)=>{
+    console.log(req.file);
+    //res.send({path : req.file.path,file: req.file.filename});
+    User.findOneAndUpdate({_id:req.data.data},{
+        Image: req.file.path
+    },{new:true},(err,result)=> {
         if(err){
             res.status(404).send('user not found')
         }else{

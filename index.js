@@ -8,7 +8,7 @@ app.use(cors())
 
 //The pattern for the connection string is mongodb://<HOSTNAME>:<PORT>/<DBNAME>
 mongoose.connect('mongodb://localhost:27017/node15july');
-
+app.use('/uploads',express.static('uploads'));
 var bodyParser = require('body-parser');
 app.use(bodyParser.json({limit: '5mb'}));
 app.use(bodyParser.urlencoded({limit: '5mb', extended: true}));
@@ -17,12 +17,15 @@ let userRoute = require('./routes/user');
 let topicRoute=require('./routes/topic');
 let messageRoute = require('./routes/message');
 let friendRoute = require('./routes/friends');
+let postRoute = require('./routes/posts');
+
 
 app.use(courseRoute);
 app.use(userRoute);
 app.use(topicRoute);
 app.use(messageRoute);
 app.use(friendRoute);
+app.use(postRoute);
 
 const port = process.env.PORT || 3000;
 
